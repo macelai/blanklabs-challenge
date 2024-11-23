@@ -8,18 +8,18 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useExchangeRate } from "@/hooks/use-exchange-rate";
-import { useTokenApproval } from "@/hooks/use-token-approval";
+import { useBLTMApproval, useUSDCApproval } from "@/hooks/use-token-approval";
 import { useBLTMBalance, useUSDCBalance } from "@/hooks/use-token-balance";
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
 import { ArrowDownUp, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useSwapTokens } from "@/hooks/use-swap-tokens";
+import { useSwapCalculator } from "@/hooks/use-swap-calculator";
 
 interface Token {
   symbol: string;
   name: string;
   icon: string;
-  address: string;
 }
 
 const tokens: { [key: string]: Token } = {
@@ -27,13 +27,11 @@ const tokens: { [key: string]: Token } = {
     symbol: "BLTM",
     name: "Blank Labs Token",
     icon: "🔷",
-    address: process.env.NEXT_PUBLIC_BLTM_ADDRESS as string,
   },
   USDC: {
     symbol: "USDC",
     name: "USD Coin",
     icon: "💵",
-    address: process.env.NEXT_PUBLIC_USDC_ADDRESS as string,
   },
 };
 
@@ -45,9 +43,26 @@ export function SwapCard() {
 
   const { balance: bltmBalance, isLoading: isLoadingBLTMBalance } = useBLTMBalance(primaryWallet?.address);
   const { balance: usdcBalance, isLoading: isLoadingUSDCBalance } = useUSDCBalance(primaryWallet?.address);
-  const { exchangeRate, isLoading: isLoadingExchangeRate } = useExchangeRate();
-  const { isApproved, handleApprove, isApproving } =
-    useTokenApproval(fromAmount);
+
+  const { isApproved: isBLTMApproved, handleApprove: handleBLTMApprove, isApproving: isBLTMApproving } =
+    useBLTMApproval(fromAmount);
+  const { isApproved: isUSDCApproved, handleApprove: handleUSDCApprove, isApproving: isUSDCApproving } = useUSDCApproval(fromAmount);
+
+  const {
+    handleSwap,
+    handleRedeem,
+    isSwapping,
+    isRedeeming,
+    isSwapSuccess,
+    isRedeemSuccess,
+  } = useSwapTokens(fromAmount);
+
+  const {
+    calculateBltmOutput,
+    calculateUsdcOutput,
+    exchangeRate,
+    isLoading: isCalculating,
+  } = useSwapCalculator();
 
   const handleSwitch = () => {
     setFromToken(toToken);
@@ -71,13 +86,12 @@ export function SwapCard() {
     if (Number.isNaN(fromAmount)) {
       return "";
     }
-    const calculatedAmount =
-      fromToken.symbol === "USDC"
-        ? Number(fromAmount) / exchangeRate
-        : Number(fromAmount) * exchangeRate;
 
-    return calculatedAmount.toString();
-  }, [fromAmount, exchangeRate, fromToken.symbol]);
+    const amount = Number(fromAmount);
+    return fromToken.symbol === "USDC"
+      ? calculateBltmOutput(amount.toString())?.toString() ?? ""
+      : calculateUsdcOutput(amount.toString())?.toString() ?? "";
+  }, [fromAmount, exchangeRate, fromToken.symbol, calculateBltmOutput, calculateUsdcOutput]);
 
   const getButtonText = () => {
     if (!primaryWallet) {
@@ -87,6 +101,10 @@ export function SwapCard() {
         </>
       );
     }
+
+    const isApproving = fromToken.symbol === "USDC" ? isUSDCApproving : isBLTMApproving;
+    const isApproved = fromToken.symbol === "USDC" ? isUSDCApproved : isBLTMApproved;
+
     if (isApproving) {
       return (
         <>
@@ -95,17 +113,39 @@ export function SwapCard() {
         </>
       );
     }
-    if (!isApproved) return "Approve BLTM";
+    if (isSwapping || isRedeeming) {
+      return (
+        <>
+          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          {isSwapping ? "Swapping..." : "Redeeming..."}
+        </>
+      );
+    }
+    if (!isApproved) return `Approve ${fromToken.symbol}`;
     return "Swap";
   };
 
   const handleButtonClick = async () => {
-    if (!primaryWallet) return;
-    if (!isApproved) {
-      await handleApprove();
-    } else {
-      // TODO: Implement swap logic
-      console.log("Swap tokens");
+    if (!primaryWallet || !fromAmount) return;
+
+    const isApproved = fromToken.symbol === "USDC" ? isUSDCApproved : isBLTMApproved;
+    const handleApprove = fromToken.symbol === "USDC" ? handleUSDCApprove : handleBLTMApprove;
+
+    try {
+      if (!isApproved) {
+        await handleApprove();
+      } else {
+        const amount = Number(fromAmount);
+        if (fromToken.symbol === "USDC") {
+          console.log("Swapping", amount);
+          await handleSwap(amount.toString());
+        } else {
+          await handleRedeem(amount.toString());
+        }
+      }
+    } catch (error) {
+      console.error("Transaction failed:", error);
+      // TODO: Add toast notification for error
     }
   };
 
@@ -168,7 +208,7 @@ export function SwapCard() {
           <div className="flex justify-between text-muted-foreground">
             <span>Rate</span>
             <span>
-              {isLoadingExchangeRate ? (
+              {isCalculating ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <>
@@ -188,7 +228,12 @@ export function SwapCard() {
         <Button
           className="w-full flex items-center justify-center"
           size="lg"
-          disabled={isApproving || !primaryWallet}
+          disabled={
+            (fromToken.symbol === "USDC" ? isUSDCApproving : isBLTMApproving) ||
+            !primaryWallet ||
+            isSwapping ||
+            isRedeeming
+          }
           onClick={handleButtonClick}
         >
           {getButtonText()}
