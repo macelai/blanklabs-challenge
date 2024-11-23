@@ -6,32 +6,43 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core"
+import LiquidityPoolABI from "@/abis/LiquidityPool.json"
+import BLTMABI from "@/abis/BLTM.json"
+import { useExchangeRate } from "@/hooks/use-exchange-rate"
 
 interface Token {
   symbol: string
   name: string
   icon: string
+  address: string
+  abi: any,
 }
 
 const tokens: { [key: string]: Token } = {
-  ETH: {
-    symbol: "ETH",
-    name: "Ethereum",
+  BLTM: {
+    symbol: "BLTM",
+    name: "Blank Labs Token",
     icon: "🔷",
+    address: process.env.NEXT_PUBLIC_BLTM_ADDRESS as string,
+    abi: BLTMABI,
   },
   USDC: {
     symbol: "USDC",
     name: "USD Coin",
     icon: "💵",
+    address: process.env.NEXT_PUBLIC_USDC_ADDRESS as string,
+    abi: LiquidityPoolABI,
   },
 }
 
 export function SwapCard() {
   const { primaryWallet } = useDynamicContext();
-  const [fromToken, setFromToken] = React.useState<Token>(tokens.ETH)
+  const [fromToken, setFromToken] = React.useState<Token>(tokens.BLTM)
   const [toToken, setToToken] = React.useState<Token>(tokens.USDC)
   const [fromAmount, setFromAmount] = React.useState("")
   const [toAmount, setToAmount] = React.useState("")
+
+  const { exchangeRate, isLoading } = useExchangeRate()
 
   const handleSwitch = () => {
     setFromToken(toToken)
@@ -39,6 +50,11 @@ export function SwapCard() {
     setFromAmount(toAmount)
     setToAmount(fromAmount)
   }
+
+  // Calculate the display rate based on token order
+  const displayRate = fromToken.symbol === "USDC"
+    ? exchangeRate
+    : exchangeRate ? (1 / exchangeRate) : null
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -49,7 +65,6 @@ export function SwapCard() {
             <span className="text-sm text-muted-foreground">You pay</span>
             <Button variant="ghost" size="sm" className="gap-2">
               {fromToken.icon} {fromToken.symbol}
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
             </Button>
           </div>
           <Input
@@ -59,9 +74,6 @@ export function SwapCard() {
             onChange={(e) => setFromAmount(e.target.value)}
             className="border-0 bg-transparent text-2xl focus-visible:ring-0"
           />
-          <div className="text-sm text-muted-foreground">
-            ≈ ${fromAmount ? Number.parseFloat(fromAmount) * 1800 : "0.00"}
-          </div>
         </div>
 
         <div className="flex justify-center -my-2 relative z-10">
@@ -80,7 +92,6 @@ export function SwapCard() {
             <span className="text-sm text-muted-foreground">You receive</span>
             <Button variant="ghost" size="sm" className="gap-2">
               {toToken.icon} {toToken.symbol}
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
             </Button>
           </div>
           <Input
@@ -90,19 +101,16 @@ export function SwapCard() {
             onChange={(e) => setToAmount(e.target.value)}
             className="border-0 bg-transparent text-2xl focus-visible:ring-0"
           />
-          <div className="text-sm text-muted-foreground">
-            ≈ ${toAmount ? Number.parseFloat(toAmount) * 1 : "0.00"}
-          </div>
         </div>
 
         <div className="rounded-lg border bg-card px-4 py-2 text-sm space-y-1">
           <div className="flex justify-between text-muted-foreground">
             <span>Rate</span>
-            <span>1 ETH = 1,800 USDC</span>
+            <span>1 {fromToken.symbol} = {displayRate?.toString() ?? '-'} {toToken.symbol}</span>
           </div>
           <div className="flex justify-between text-muted-foreground">
-            <span>Network Fee</span>
-            <span>≈ $5.00</span>
+            <span>Royalty Fee</span>
+            <span>2.00%</span>
           </div>
         </div>
       </CardContent>
