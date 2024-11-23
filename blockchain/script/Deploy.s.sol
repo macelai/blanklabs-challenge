@@ -24,8 +24,8 @@ function run() public {
 
         // Deploy Liquidity Pool
         LiquidityPool pool = new LiquidityPool(
-            address(blmt),
             USDC,
+            address(blmt),
             2
         );
 
