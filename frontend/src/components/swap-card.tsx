@@ -9,6 +9,7 @@ import { useDynamicContext } from "@dynamic-labs/sdk-react-core"
 import LiquidityPoolABI from "@/abis/LiquidityPool.json"
 import BLTMABI from "@/abis/BLTM.json"
 import { useExchangeRate } from "@/hooks/use-exchange-rate"
+import { useTokenApproval } from "@/hooks/use-token-approval"
 
 interface Token {
   symbol: string
@@ -43,6 +44,7 @@ export function SwapCard() {
   const [toAmount, setToAmount] = React.useState("")
 
   const { exchangeRate, isLoading } = useExchangeRate()
+  const { isApproved, handleApprove, isApproving, isApproveSuccess } = useTokenApproval(fromAmount)
 
   const handleSwitch = () => {
     setFromToken(toToken)
@@ -55,6 +57,23 @@ export function SwapCard() {
   const displayRate = fromToken.symbol === "USDC"
     ? exchangeRate
     : exchangeRate ? (1 / exchangeRate) : null
+
+  const getButtonText = () => {
+    if (!primaryWallet) return "Connect Wallet to Swap"
+    if (isApproving) return "Approving..."
+    if (!isApproved) return "Approve BLTM"
+    return "Swap"
+  }
+
+  const handleButtonClick = async () => {
+    if (!primaryWallet) return
+    if (!isApproved) {
+      await handleApprove()
+    } else {
+      // TODO: Implement swap logic
+      console.log("Swap tokens")
+    }
+  }
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -115,8 +134,13 @@ export function SwapCard() {
         </div>
       </CardContent>
       <CardFooter>
-        <Button className="w-full" size="lg">
-          {primaryWallet ? "Swap" : "Connect Wallet to Swap"}
+        <Button
+          className="w-full"
+          size="lg"
+          disabled={isApproving}
+          onClick={handleButtonClick}
+        >
+          {getButtonText()}
         </Button>
       </CardFooter>
     </Card>
