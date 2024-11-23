@@ -1,22 +1,24 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { ArrowDownUp, Loader2 } from 'lucide-react'
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { useDynamicContext } from "@dynamic-labs/sdk-react-core"
-import LiquidityPoolABI from "@/abis/LiquidityPool.json"
-import BLTMABI from "@/abis/BLTM.json"
-import { useExchangeRate } from "@/hooks/use-exchange-rate"
-import { useTokenApproval } from "@/hooks/use-token-approval"
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { useExchangeRate } from "@/hooks/use-exchange-rate";
+import { useTokenApproval } from "@/hooks/use-token-approval";
+import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
+import { ArrowDownUp, Loader2 } from "lucide-react";
+import { useMemo, useState } from "react";
 
 interface Token {
-  symbol: string
-  name: string
-  icon: string
-  address: string
-  abi: any,
+  symbol: string;
+  name: string;
+  icon: string;
+  address: string;
 }
 
 const tokens: { [key: string]: Token } = {
@@ -25,38 +27,55 @@ const tokens: { [key: string]: Token } = {
     name: "Blank Labs Token",
     icon: "🔷",
     address: process.env.NEXT_PUBLIC_BLTM_ADDRESS as string,
-    abi: BLTMABI,
   },
   USDC: {
     symbol: "USDC",
     name: "USD Coin",
     icon: "💵",
     address: process.env.NEXT_PUBLIC_USDC_ADDRESS as string,
-    abi: LiquidityPoolABI,
   },
-}
+};
 
 export function SwapCard() {
   const { primaryWallet } = useDynamicContext();
-  const [fromToken, setFromToken] = React.useState<Token>(tokens.BLTM)
-  const [toToken, setToToken] = React.useState<Token>(tokens.USDC)
-  const [fromAmount, setFromAmount] = React.useState("")
-  const [toAmount, setToAmount] = React.useState("")
+  const [fromToken, setFromToken] = useState<Token>(tokens.USDC);
+  const [toToken, setToToken] = useState<Token>(tokens.BLTM);
+  const [fromAmount, setFromAmount] = useState<string>("");
 
-  const { exchangeRate, isLoading } = useExchangeRate()
-  const { isApproved, handleApprove, isApproving, isApproveSuccess } = useTokenApproval(fromAmount)
+  const { exchangeRate, isLoading: isLoadingExchangeRate } = useExchangeRate();
+  const { isApproved, handleApprove, isApproving } =
+    useTokenApproval(fromAmount);
 
   const handleSwitch = () => {
-    setFromToken(toToken)
-    setToToken(fromToken)
-    setFromAmount(toAmount)
-    setToAmount(fromAmount)
-  }
+    setFromToken(toToken);
+    setToToken(fromToken);
+    setFromAmount(calculatedToAmount);
+  };
 
   // Calculate the display rate based on token order
-  const displayRate = fromToken.symbol === "USDC"
-    ? exchangeRate
-    : exchangeRate ? (1 / exchangeRate) : null
+  const displayRate =
+    fromToken.symbol === "USDC"
+      ? exchangeRate
+      : exchangeRate
+      ? 1 / exchangeRate
+      : null;
+
+  // Calculate toAmount based on fromAmount and exchangeRate
+  const calculatedToAmount = useMemo(() => {
+    if (!fromAmount || !exchangeRate) {
+      return "";
+    }
+
+    if (Number.isNaN(fromAmount)) {
+      return "";
+    }
+    const calculatedAmount =
+      fromToken.symbol === "USDC"
+        ? Number(fromAmount) / exchangeRate
+        : Number(fromAmount) * exchangeRate;
+
+    return calculatedAmount.toString();
+  }, [fromAmount, exchangeRate, fromToken.symbol]);
 
   const getButtonText = () => {
     if (!primaryWallet) {
@@ -64,7 +83,7 @@ export function SwapCard() {
         <>
           <Loader2 className="h-4 w-4 animate-spin mr-2" />
         </>
-      )
+      );
     }
     if (isApproving) {
       return (
@@ -72,21 +91,21 @@ export function SwapCard() {
           <Loader2 className="h-4 w-4 animate-spin mr-2" />
           Approving...
         </>
-      )
+      );
     }
-    if (!isApproved) return "Approve BLTM"
-    return "Swap"
-  }
+    if (!isApproved) return "Approve BLTM";
+    return "Swap";
+  };
 
   const handleButtonClick = async () => {
-    if (!primaryWallet) return
+    if (!primaryWallet) return;
     if (!isApproved) {
-      await handleApprove()
+      await handleApprove();
     } else {
       // TODO: Implement swap logic
-      console.log("Swap tokens")
+      console.log("Swap tokens");
     }
-  }
+  };
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -129,8 +148,9 @@ export function SwapCard() {
           <Input
             type="number"
             placeholder="0.0"
-            value={toAmount}
-            onChange={(e) => setToAmount(e.target.value)}
+            value={calculatedToAmount?.toString() ?? "0.0"}
+            readOnly
+            disabled
             className="border-0 bg-transparent text-2xl focus-visible:ring-0"
           />
         </div>
@@ -138,7 +158,16 @@ export function SwapCard() {
         <div className="rounded-lg border bg-card px-4 py-2 text-sm space-y-1">
           <div className="flex justify-between text-muted-foreground">
             <span>Rate</span>
-            <span>1 {fromToken.symbol} = {displayRate?.toString() ?? '-'} {toToken.symbol}</span>
+            <span>
+              {isLoadingExchangeRate ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  1 {fromToken.symbol} = {displayRate?.toString() ?? "-"}{" "}
+                  {toToken.symbol}
+                </>
+              )}
+            </span>
           </div>
           <div className="flex justify-between text-muted-foreground">
             <span>Royalty Fee</span>
@@ -157,5 +186,5 @@ export function SwapCard() {
         </Button>
       </CardFooter>
     </Card>
-  )
+  );
 }
