@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ArrowDownUp, ChevronDown } from 'lucide-react'
+import { ArrowDownUp, Loader2 } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -59,8 +59,21 @@ export function SwapCard() {
     : exchangeRate ? (1 / exchangeRate) : null
 
   const getButtonText = () => {
-    if (!primaryWallet) return "Connect Wallet to Swap"
-    if (isApproving) return "Approving..."
+    if (!primaryWallet) {
+      return (
+        <>
+          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+        </>
+      )
+    }
+    if (isApproving) {
+      return (
+        <>
+          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          Approving...
+        </>
+      )
+    }
     if (!isApproved) return "Approve BLTM"
     return "Swap"
   }
@@ -135,9 +148,9 @@ export function SwapCard() {
       </CardContent>
       <CardFooter>
         <Button
-          className="w-full"
+          className="w-full flex items-center justify-center"
           size="lg"
-          disabled={isApproving}
+          disabled={isApproving || !primaryWallet}
           onClick={handleButtonClick}
         >
           {getButtonText()}
