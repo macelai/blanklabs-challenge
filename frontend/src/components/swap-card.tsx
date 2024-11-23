@@ -10,6 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useExchangeRate } from "@/hooks/use-exchange-rate";
 import { useTokenApproval } from "@/hooks/use-token-approval";
+import { useBLTMBalance, useUSDCBalance } from "@/hooks/use-token-balance";
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
 import { ArrowDownUp, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -42,6 +43,8 @@ export function SwapCard() {
   const [toToken, setToToken] = useState<Token>(tokens.BLTM);
   const [fromAmount, setFromAmount] = useState<string>("");
 
+  const { balance: bltmBalance, isLoading: isLoadingBLTMBalance } = useBLTMBalance(primaryWallet?.address);
+  const { balance: usdcBalance, isLoading: isLoadingUSDCBalance } = useUSDCBalance(primaryWallet?.address);
   const { exchangeRate, isLoading: isLoadingExchangeRate } = useExchangeRate();
   const { isApproved, handleApprove, isApproving } =
     useTokenApproval(fromAmount);
@@ -52,7 +55,6 @@ export function SwapCard() {
     setFromAmount(calculatedToAmount);
   };
 
-  // Calculate the display rate based on token order
   const displayRate =
     fromToken.symbol === "USDC"
       ? exchangeRate
@@ -125,6 +127,13 @@ export function SwapCard() {
             onChange={(e) => setFromAmount(e.target.value)}
             className="border-0 bg-transparent text-2xl focus-visible:ring-0"
           />
+          <div className="flex justify-end">
+            <span className="text-sm text-muted-foreground">
+              Balance: {fromToken.symbol === "USDC" ?
+                (isLoadingUSDCBalance ? "Loading..." : usdcBalance?.toFixed(2)) :
+                (isLoadingBLTMBalance ? "Loading..." : bltmBalance)}
+            </span>
+          </div>
         </div>
 
         <div className="flex justify-center -my-2 relative z-10">
