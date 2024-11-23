@@ -12,3 +12,7 @@ docs/
 
 # Dotenv file
 .env
+
+coverage/
+.DS_Store
+lcov.info
