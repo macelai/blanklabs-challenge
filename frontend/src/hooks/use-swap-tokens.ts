@@ -11,7 +11,6 @@ import { parseUnits } from "viem"
  * @returns Object containing swap and redeem functions and their states
  */
 export function useSwapTokens(amount?: string) {
-  console.log("amount", parseUnits(amount ?? "0", 6));
   // Swap USDC for BLTM
   const { data: simulateSwapData } = useSimulateContract({
     address: LIQUIDITY_POOL_ADDRESS,
@@ -19,8 +18,6 @@ export function useSwapTokens(amount?: string) {
     functionName: "swapUsdcForBltm",
     args: amount ? [parseUnits(amount, 6)] : undefined,
   });
-
-  console.log("simulateSwapData", simulateSwapData);
 
   const { writeContract: swap, data: swapData } = useWriteContract()
 
@@ -50,7 +47,6 @@ export function useSwapTokens(amount?: string) {
 
   const handleSwap = async (usdcAmount: string) => {
     if (!simulateSwapData?.request) return
-    console.log("simulateSwapData", simulateSwapData.request);
 
     try {
       const amountInWei = parseUnits(usdcAmount, 6) // USDC has 6 decimals

@@ -155,7 +155,6 @@ export function SwapCard() {
       } else {
         const amount = Number(fromAmount);
         if (fromToken.symbol === "USDC") {
-          console.log("Swapping", amount);
           await handleSwap(amount.toString());
         } else {
           await handleRedeem(amount.toString());
