@@ -8,13 +8,13 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { useSwapCalculator } from "@/hooks/use-swap-calculator";
+import { useSwapTokens } from "@/hooks/use-swap-tokens";
 import { useBLTMApproval, useUSDCApproval } from "@/hooks/use-token-approval";
 import { useBLTMBalance, useUSDCBalance } from "@/hooks/use-token-balance";
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
 import { ArrowDownUp, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useSwapTokens } from "@/hooks/use-swap-tokens";
-import { useSwapCalculator } from "@/hooks/use-swap-calculator";
 
 interface Token {
   symbol: string;
@@ -41,12 +41,21 @@ export function SwapCard() {
   const [toToken, setToToken] = useState<Token>(tokens.BLTM);
   const [fromAmount, setFromAmount] = useState<string>("");
 
-  const { balance: bltmBalance, isLoading: isLoadingBLTMBalance } = useBLTMBalance(primaryWallet?.address);
-  const { balance: usdcBalance, isLoading: isLoadingUSDCBalance } = useUSDCBalance(primaryWallet?.address);
+  const { balance: bltmBalance, isLoading: isLoadingBLTMBalance } =
+    useBLTMBalance(primaryWallet?.address);
+  const { balance: usdcBalance, isLoading: isLoadingUSDCBalance } =
+    useUSDCBalance(primaryWallet?.address);
 
-  const { isApproved: isBLTMApproved, handleApprove: handleBLTMApprove, isApproving: isBLTMApproving } =
-    useBLTMApproval(fromAmount);
-  const { isApproved: isUSDCApproved, handleApprove: handleUSDCApprove, isApproving: isUSDCApproving } = useUSDCApproval(fromAmount);
+  const {
+    isApproved: isBLTMApproved,
+    handleApprove: handleBLTMApprove,
+    isApproving: isBLTMApproving,
+  } = useBLTMApproval(fromAmount);
+  const {
+    isApproved: isUSDCApproved,
+    handleApprove: handleUSDCApprove,
+    isApproving: isUSDCApproving,
+  } = useUSDCApproval(fromAmount);
 
   const {
     handleSwap,
@@ -77,7 +86,6 @@ export function SwapCard() {
       ? 1 / exchangeRate
       : null;
 
-  // Calculate toAmount based on fromAmount and exchangeRate
   const calculatedToAmount = useMemo(() => {
     if (!fromAmount || !exchangeRate) {
       return "";
@@ -91,24 +99,32 @@ export function SwapCard() {
     return fromToken.symbol === "USDC"
       ? calculateBltmOutput(amount.toString())?.toString() ?? ""
       : calculateUsdcOutput(amount.toString())?.toString() ?? "";
-  }, [fromAmount, exchangeRate, fromToken.symbol, calculateBltmOutput, calculateUsdcOutput]);
+  }, [
+    fromAmount,
+    exchangeRate,
+    fromToken.symbol,
+    calculateBltmOutput,
+    calculateUsdcOutput,
+  ]);
 
   const getButtonText = () => {
     if (!primaryWallet) {
       return (
         <>
-          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          <Loader2 className="h-4 w-4 animate-spin mr-2 animate-pulse" />
         </>
       );
     }
 
-    const isApproving = fromToken.symbol === "USDC" ? isUSDCApproving : isBLTMApproving;
-    const isApproved = fromToken.symbol === "USDC" ? isUSDCApproved : isBLTMApproved;
+    const isApproving =
+      fromToken.symbol === "USDC" ? isUSDCApproving : isBLTMApproving;
+    const isApproved =
+      fromToken.symbol === "USDC" ? isUSDCApproved : isBLTMApproved;
 
     if (isApproving) {
       return (
         <>
-          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          <Loader2 className="h-4 w-4 animate-spin mr-2 animate-pulse" />
           Approving...
         </>
       );
@@ -116,7 +132,7 @@ export function SwapCard() {
     if (isSwapping || isRedeeming) {
       return (
         <>
-          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          <Loader2 className="h-4 w-4 animate-spin mr-2 animate-pulse" />
           {isSwapping ? "Swapping..." : "Redeeming..."}
         </>
       );
@@ -128,8 +144,10 @@ export function SwapCard() {
   const handleButtonClick = async () => {
     if (!primaryWallet || !fromAmount) return;
 
-    const isApproved = fromToken.symbol === "USDC" ? isUSDCApproved : isBLTMApproved;
-    const handleApprove = fromToken.symbol === "USDC" ? handleUSDCApprove : handleBLTMApprove;
+    const isApproved =
+      fromToken.symbol === "USDC" ? isUSDCApproved : isBLTMApproved;
+    const handleApprove =
+      fromToken.symbol === "USDC" ? handleUSDCApprove : handleBLTMApprove;
 
     try {
       if (!isApproved) {
@@ -150,13 +168,17 @@ export function SwapCard() {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader className="text-2xl font-semibold">Swap</CardHeader>
+    <Card className="w-full max-w-md mx-auto bg-gradient-to-br from-gray-900 to-black text-white">
+      <CardHeader className="text-3xl font-bold text-center">Swap</CardHeader>
       <CardContent className="space-y-4">
-        <div className="rounded-lg border bg-card p-4 space-y-2">
+        <div className="rounded-lg border border-white/20 bg-black/30 p-4 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">You pay</span>
-            <Button variant="ghost" size="sm" className="gap-2">
+            <span className="text-sm text-white/70">You pay</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2 text-white hover:bg-white/20"
+            >
               {fromToken.icon} {fromToken.symbol}
             </Button>
           </div>
@@ -165,13 +187,18 @@ export function SwapCard() {
             placeholder="0.0"
             value={fromAmount}
             onChange={(e) => setFromAmount(e.target.value)}
-            className="border-0 bg-transparent text-2xl focus-visible:ring-0"
+            className="border-0 bg-transparent text-2xl focus-visible:ring-0 text-white placeholder-white/50"
           />
           <div className="flex justify-end">
-            <span className="text-sm text-muted-foreground">
-              Balance: {fromToken.symbol === "USDC" ?
-                (isLoadingUSDCBalance ? "Loading..." : usdcBalance?.toFixed(2)) :
-                (isLoadingBLTMBalance ? "Loading..." : bltmBalance)}
+            <span className="text-sm text-white/70">
+              Balance:{" "}
+              {fromToken.symbol === "USDC"
+                ? isLoadingUSDCBalance
+                  ? "Loading..."
+                  : usdcBalance?.toFixed(2)
+                : isLoadingBLTMBalance
+                ? "Loading..."
+                : bltmBalance}
             </span>
           </div>
         </div>
@@ -180,17 +207,21 @@ export function SwapCard() {
           <Button
             variant="secondary"
             size="icon"
-            className="rounded-full shadow-md"
+            className="rounded-full shadow-md bg-white text-purple-500 hover:bg-purple-100"
             onClick={handleSwitch}
           >
             <ArrowDownUp className="h-4 w-4" />
           </Button>
         </div>
 
-        <div className="rounded-lg border bg-card p-4 space-y-2">
+        <div className="rounded-lg border border-white/20 bg-black/30 p-4 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">You receive</span>
-            <Button variant="ghost" size="sm" className="gap-2">
+            <span className="text-sm text-white/70">You receive</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2 text-white hover:bg-white/20"
+            >
               {toToken.icon} {toToken.symbol}
             </Button>
           </div>
@@ -200,12 +231,12 @@ export function SwapCard() {
             value={calculatedToAmount?.toString() ?? "0.0"}
             readOnly
             disabled
-            className="border-0 bg-transparent text-2xl focus-visible:ring-0"
+            className="border-0 bg-transparent text-2xl focus-visible:ring-0 text-white placeholder-white/50"
           />
         </div>
 
-        <div className="rounded-lg border bg-card px-4 py-2 text-sm space-y-1">
-          <div className="flex justify-between text-muted-foreground">
+        <div className="rounded-lg border border-white/20 bg-black/30 px-4 py-2 text-sm space-y-1">
+          <div className="flex justify-between text-white/70">
             <span>Rate</span>
             <span>
               {isCalculating ? (
@@ -218,7 +249,7 @@ export function SwapCard() {
               )}
             </span>
           </div>
-          <div className="flex justify-between text-muted-foreground">
+          <div className="flex justify-between text-white/70">
             <span>Royalty Fee</span>
             <span>2.00%</span>
           </div>
@@ -226,7 +257,7 @@ export function SwapCard() {
       </CardContent>
       <CardFooter>
         <Button
-          className="w-full flex items-center justify-center"
+          className="w-full flex items-center justify-center bg-purple-600 text-white hover:bg-purple-700"
           size="lg"
           disabled={
             (fromToken.symbol === "USDC" ? isUSDCApproving : isBLTMApproving) ||
