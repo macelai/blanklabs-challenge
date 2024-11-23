@@ -5,6 +5,7 @@ import { ArrowDownUp, ChevronDown } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { useDynamicContext } from "@dynamic-labs/sdk-react-core"
 
 interface Token {
   symbol: string
@@ -26,6 +27,7 @@ const tokens: { [key: string]: Token } = {
 }
 
 export function SwapCard() {
+  const { primaryWallet } = useDynamicContext();
   const [fromToken, setFromToken] = React.useState<Token>(tokens.ETH)
   const [toToken, setToToken] = React.useState<Token>(tokens.USDC)
   const [fromAmount, setFromAmount] = React.useState("")
@@ -58,7 +60,7 @@ export function SwapCard() {
             className="border-0 bg-transparent text-2xl focus-visible:ring-0"
           />
           <div className="text-sm text-muted-foreground">
-            ≈ ${fromAmount ? parseFloat(fromAmount) * 1800 : "0.00"}
+            ≈ ${fromAmount ? Number.parseFloat(fromAmount) * 1800 : "0.00"}
           </div>
         </div>
 
@@ -89,7 +91,7 @@ export function SwapCard() {
             className="border-0 bg-transparent text-2xl focus-visible:ring-0"
           />
           <div className="text-sm text-muted-foreground">
-            ≈ ${toAmount ? parseFloat(toAmount) * 1 : "0.00"}
+            ≈ ${toAmount ? Number.parseFloat(toAmount) * 1 : "0.00"}
           </div>
         </div>
 
@@ -106,10 +108,9 @@ export function SwapCard() {
       </CardContent>
       <CardFooter>
         <Button className="w-full" size="lg">
-          Connect Wallet to Swap
+          {primaryWallet ? "Swap" : "Connect Wallet to Swap"}
         </Button>
       </CardFooter>
     </Card>
   )
 }
-
