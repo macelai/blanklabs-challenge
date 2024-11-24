@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { DynamicConnectButton, useDynamicContext, useIsLoggedIn } from "@dynamic-labs/sdk-react-core";
 import { Loader2 } from "lucide-react";
 

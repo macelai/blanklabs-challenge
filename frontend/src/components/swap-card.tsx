@@ -143,7 +143,7 @@ export function SwapCard() {
           token={fromToken}
           amount={fromAmount}
           onChange={setFromAmount}
-          balance={fromToken.symbol === "USDC" ? usdcBalance : bltmBalance}
+          balance={fromToken.symbol === "USDC" ? usdcBalance ?? undefined : bltmBalance ?? undefined}
           isLoadingBalance={
             fromToken.symbol === "USDC" ? isLoadingUSDCBalance : isLoadingBLTMBalance
           }
@@ -172,7 +172,9 @@ export function SwapCard() {
         <TokenInput
           token={toToken}
           amount={calculatedToAmount}
-          balance={toToken.symbol === "USDC" ? usdcBalance : bltmBalance}
+          balance={
+            toToken.symbol === "USDC" ? usdcBalance ?? undefined : bltmBalance ?? undefined
+          }
           isLoadingBalance={
             toToken.symbol === "USDC" ? isLoadingUSDCBalance : isLoadingBLTMBalance
           }

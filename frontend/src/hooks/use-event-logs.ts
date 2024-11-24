@@ -54,14 +54,14 @@ export function useEventLogs() {
         ...swapLogs.map((log) => ({
           id: `${log.transactionHash}-${log.logIndex}`,
           action: "mint" as const,
-          usdcAmount: Number(formatUnits(log.args.usdcAmount, 6)),
-          bltmAmount: Number(formatUnits(log.args.bltmAmount, 6)),
+          usdcAmount: Number(formatUnits((log as unknown as { args: { usdcAmount: bigint } }).args.usdcAmount, 6)),
+          bltmAmount: Number(formatUnits((log as unknown as { args: { bltmAmount: bigint } }).args.bltmAmount, 6)),
         })),
         ...redeemLogs.map((log) => ({
           id: `${log.transactionHash}-${log.logIndex}`,
           action: "burn" as const,
-          usdcAmount: Number(formatUnits(log.args.usdcAmount, 6)),
-          bltmAmount: Number(formatUnits(log.args.bltmAmount, 6)),
+          usdcAmount: Number(formatUnits((log as unknown as { args: { usdcAmount: bigint } }).args.usdcAmount, 6)),
+          bltmAmount: Number(formatUnits((log as unknown as { args: { bltmAmount: bigint } }).args.bltmAmount, 6)),
         })),
       ]
       setTransactions(allTransactions);
@@ -69,7 +69,7 @@ export function useEventLogs() {
       setIsLoading(false);
       return allTransactions;
     } catch (error) {
-      console.error("Error fetching events:", error.message);
+      console.error("Error fetching events:", error);
       setIsLoading(false);
       setIsError(true);
       toast({
