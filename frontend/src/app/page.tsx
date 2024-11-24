@@ -7,6 +7,17 @@ export default function Home() {
     <div className="min-h-screen">
       <NavBar />
       <main className="py-8">
+        <div className="text-center mb-4 text-muted-foreground">
+          No USDC on Base Sepolia? Get some at{" "}
+          <a
+            href="https://faucet.circle.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:underline"
+          >
+            https://faucet.circle.com/
+          </a>
+        </div>
         <SwapCard />
         <TransactionHistory />
       </main>
