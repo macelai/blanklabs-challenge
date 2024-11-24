@@ -12,7 +12,7 @@ import { useSwapCalculator } from "@/hooks/use-swap-calculator";
 import { useSwapTokens } from "@/hooks/use-swap-tokens";
 import { useBLTMApproval, useUSDCApproval } from "@/hooks/use-token-approval";
 import { useBLTMBalance, useUSDCBalance } from "@/hooks/use-token-balance";
-import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
+import { useDynamicContext, useIsLoggedIn } from "@dynamic-labs/sdk-react-core";
 import { ArrowDownUp, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -37,6 +37,7 @@ const tokens: { [key: string]: Token } = {
 
 export function SwapCard() {
   const { primaryWallet } = useDynamicContext();
+  const isLoggedIn = useIsLoggedIn();
   const [fromToken, setFromToken] = useState<Token>(tokens.USDC);
   const [toToken, setToToken] = useState<Token>(tokens.BLTM);
   const [fromAmount, setFromAmount] = useState<string>("");
@@ -117,6 +118,9 @@ export function SwapCard() {
   }, [fromAmount, fromToken.symbol, usdcBalance, bltmBalance]);
 
   const getButtonText = () => {
+    if (!isLoggedIn) {
+      return "Connect Wallet";
+    }
     if (!primaryWallet) {
       return (
         <>

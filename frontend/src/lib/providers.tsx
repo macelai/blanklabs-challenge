@@ -21,6 +21,23 @@ export default function Providers({
       settings={{
         environmentId: process.env.NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID as string,
         walletConnectors: [EthereumWalletConnectors],
+        overrides: {
+          evmNetworks: [
+            {
+              chainId: 84532,
+              networkId: 84532,
+              name: "Base Sepolia",
+              iconUrls: [],
+              nativeCurrency: {
+                name: "Ethereum",
+                symbol: "ETH",
+                decimals: 18,
+              },
+              rpcUrls: ["https://sepolia.base.org"],
+              blockExplorerUrls: ["https://sepolia.basescan.org"]
+            },
+          ],
+        },
       }}
     >
 
