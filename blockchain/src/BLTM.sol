@@ -18,6 +18,10 @@ contract BLTM is ERC20, ERC20Burnable, ERC20Pausable, AccessControl {
         _grantRole(MINTER_ROLE, minter);
     }
 
+    function decimals() public view virtual override returns (uint8) {
+        return 6;
+    }
+
     function pause() public onlyRole(PAUSER_ROLE) {
         _pause();
     }
