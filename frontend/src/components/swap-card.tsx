@@ -63,8 +63,6 @@ export function SwapCard() {
     handleRedeem,
     isSwapping,
     isRedeeming,
-    isSwapSuccess,
-    isRedeemSuccess,
   } = useSwapTokens(fromAmount);
 
   const {
@@ -124,7 +122,7 @@ export function SwapCard() {
     if (!primaryWallet) {
       return (
         <>
-          <Loader2 className="h-4 w-4 animate-spin mr-2 animate-pulse" />
+          <Loader2 className="h-4 w-4 animate-spin mr-2" />
         </>
       );
     }
@@ -141,7 +139,7 @@ export function SwapCard() {
     if (isApproving) {
       return (
         <>
-          <Loader2 className="h-4 w-4 animate-spin mr-2 animate-pulse" />
+          <Loader2 className="h-4 w-4 animate-spin mr-2" />
           Approving...
         </>
       );
@@ -149,7 +147,7 @@ export function SwapCard() {
     if (isSwapping || isRedeeming) {
       return (
         <>
-          <Loader2 className="h-4 w-4 animate-spin mr-2 animate-pulse" />
+          <Loader2 className="h-4 w-4 animate-spin mr-2" />
           {isSwapping ? "Swapping..." : "Redeeming..."}
         </>
       );
@@ -225,7 +223,7 @@ export function SwapCard() {
           <Button
             variant="secondary"
             size="icon"
-            className="rounded-full shadow-md bg-white text-purple-500 hover:bg-purple-100"
+            className="rounded-full shadow-md bg-white text-black hover:bg-gray-100"
             onClick={handleSwitch}
           >
             <ArrowDownUp className="h-4 w-4" />
@@ -275,7 +273,7 @@ export function SwapCard() {
       </CardContent>
       <CardFooter>
         <Button
-          className="w-full flex items-center justify-center bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50"
+          className="w-full flex items-center justify-center bg-white text-black hover:bg-gray-100 disabled:opacity-50"
           size="lg"
           disabled={
             hasInsufficientBalance ||
