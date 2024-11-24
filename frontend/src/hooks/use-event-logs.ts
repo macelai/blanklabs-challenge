@@ -38,13 +38,13 @@ export function useEventLogs() {
           address: LIQUIDITY_POOL_ADDRESS,
           abi: LiquidityPoolABI,
           eventName: "TokensSwapped",
-          fromBlock: BigInt(18343492),
+          fromBlock: BigInt(18358090),
         }),
         publicClient.getContractEvents({
           address: LIQUIDITY_POOL_ADDRESS,
           abi: LiquidityPoolABI,
           eventName: "TokensRedeemed",
-          fromBlock: BigInt(18343492),
+          fromBlock: BigInt(18358090),
         }),
       ]);
 
