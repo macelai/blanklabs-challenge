@@ -5,8 +5,11 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {BLTM} from "./BLTM.sol";
 import {ILiquidityPoolEventsAndErrors} from "./ILiquidityPoolEventsAndErrors.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract LiquidityPool is AccessControl, ILiquidityPoolEventsAndErrors {
+    using SafeERC20 for IERC20;
+
     bytes32 public constant OWNER_ROLE = keccak256("OWNER_ROLE");
 
     IERC20 public immutable usdcToken;
@@ -45,10 +48,10 @@ contract LiquidityPool is AccessControl, ILiquidityPoolEventsAndErrors {
         uint256 netAmount = usdcAmount - royaltyAmount;
         uint256 bltmAmount = netAmount * exchangeRate;
 
-        if (!usdcToken.transferFrom(msg.sender, address(this), usdcAmount)) revert TransferFailed();
-        bltmToken.mint(msg.sender, bltmAmount);
-
         emit TokensSwapped(msg.sender, usdcAmount, bltmAmount);
+
+        bltmToken.mint(msg.sender, bltmAmount);
+        usdcToken.safeTransferFrom(msg.sender, address(this), usdcAmount);
     }
 
     function redeemBltmForUsdc(uint256 bltmAmount) external {
@@ -57,17 +60,18 @@ contract LiquidityPool is AccessControl, ILiquidityPoolEventsAndErrors {
         uint256 usdcAmount = bltmAmount / exchangeRate;
         if (usdcAmount == 0) revert RedemptionTooSmall();
 
-        bltmToken.burn(msg.sender, bltmAmount);
-        if (!usdcToken.transfer(msg.sender, usdcAmount)) revert TransferFailed();
-
         emit TokensRedeemed(msg.sender, bltmAmount, usdcAmount);
+
+        usdcToken.safeTransfer(msg.sender, usdcAmount);
+        bltmToken.burn(msg.sender, bltmAmount);
+
     }
 
     function withdrawUsdc(uint256 amount) external onlyRole(OWNER_ROLE) {
         if (amount == 0) revert ZeroAmount();
         if (usdcToken.balanceOf(address(this)) < amount) revert InsufficientBalance();
 
-        if (!usdcToken.transfer(msg.sender, amount)) revert TransferFailed();
+        usdcToken.safeTransfer(msg.sender, amount);
         emit UsdcWithdrawn(msg.sender, amount);
     }
 }

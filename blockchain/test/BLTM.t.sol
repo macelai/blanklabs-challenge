@@ -27,7 +27,7 @@ contract BLTMTest is Test {
     function test_InitialState() public {
         assertEq(token.name(), "BLTM");
         assertEq(token.symbol(), "BLTM");
-        assertEq(token.decimals(), 18);
+        assertEq(token.decimals(), 6);
         assertTrue(token.hasRole(token.DEFAULT_ADMIN_ROLE(), defaultAdmin));
         assertTrue(token.hasRole(token.MINTER_ROLE(), minter));
         assertTrue(token.hasRole(token.PAUSER_ROLE(), pauser));
