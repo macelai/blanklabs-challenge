@@ -1,3 +1,4 @@
+import { Toaster } from "@/components/ui/toaster";
 import Providers from "@/lib/providers";
 import type { Metadata } from "next";
 import "./globals.css";
@@ -16,7 +17,8 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <Providers>
-          {children}
+          <main>{children}</main>
+          <Toaster />
         </Providers>
       </body>
     </html>

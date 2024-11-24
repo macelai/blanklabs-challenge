@@ -14,7 +14,7 @@ import { useBLTMApproval, useUSDCApproval } from "@/hooks/use-token-approval";
 import { useBLTMBalance, useUSDCBalance } from "@/hooks/use-token-balance";
 import { useDynamicContext, useIsLoggedIn } from "@dynamic-labs/sdk-react-core";
 import { ArrowDownUp, Loader2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 interface Token {
   symbol: string;
@@ -42,10 +42,16 @@ export function SwapCard() {
   const [toToken, setToToken] = useState<Token>(tokens.BLTM);
   const [fromAmount, setFromAmount] = useState<string>("");
 
-  const { balance: bltmBalance, isLoading: isLoadingBLTMBalance } =
-    useBLTMBalance(primaryWallet?.address);
-  const { balance: usdcBalance, isLoading: isLoadingUSDCBalance } =
-    useUSDCBalance(primaryWallet?.address);
+  const {
+    balance: bltmBalance,
+    isLoading: isLoadingBLTMBalance,
+    refetch: refetchBLTMBalance,
+  } = useBLTMBalance(primaryWallet?.address);
+  const {
+    balance: usdcBalance,
+    isLoading: isLoadingUSDCBalance,
+    refetch: refetchUSDCBalance,
+  } = useUSDCBalance(primaryWallet?.address);
 
   const {
     isApproved: isBLTMApproved,
@@ -62,8 +68,17 @@ export function SwapCard() {
     handleSwap,
     handleRedeem,
     isSwapping,
+    isSwapSuccess,
     isRedeeming,
+    isRedeemSuccess,
   } = useSwapTokens(fromAmount);
+
+  useEffect(() => {
+    if (isSwapSuccess || isRedeemSuccess) {
+      refetchBLTMBalance();
+      refetchUSDCBalance();
+    }
+  }, [isSwapSuccess, isRedeemSuccess, refetchBLTMBalance, refetchUSDCBalance]);
 
   const {
     calculateBltmOutput,
@@ -164,26 +179,21 @@ export function SwapCard() {
     const handleApprove =
       fromToken.symbol === "USDC" ? handleUSDCApprove : handleBLTMApprove;
 
-    try {
-      if (!isApproved) {
-        await handleApprove();
+    if (!isApproved) {
+      await handleApprove();
+    } else {
+      const amount = Number(fromAmount);
+      if (fromToken.symbol === "USDC") {
+        await handleSwap(amount.toString());
       } else {
-        const amount = Number(fromAmount);
-        if (fromToken.symbol === "USDC") {
-          await handleSwap(amount.toString());
-        } else {
-          await handleRedeem(amount.toString());
-        }
+        await handleRedeem(amount.toString());
       }
-    } catch (error) {
-      console.error("Transaction failed:", error);
-      // TODO: Add toast notification for error
     }
   };
 
   return (
     <Card className="w-full max-w-md mx-auto bg-gradient-to-br from-gray-900 to-black text-white">
-      <CardHeader className="text-3xl font-bold text-center">Swap</CardHeader>
+      <CardHeader className="text-2xl font-bold text-center">Swap</CardHeader>
       <CardContent className="space-y-4">
         <div className="rounded-lg border border-white/20 bg-black/30 p-4 space-y-2">
           <div className="flex items-center justify-between">
@@ -191,7 +201,7 @@ export function SwapCard() {
             <Button
               variant="ghost"
               size="sm"
-              className="gap-2 text-white hover:bg-white/20"
+              className="gap-2 text-white hover:bg-white/20 text-lg font-medium"
             >
               {fromToken.icon} {fromToken.symbol}
             </Button>
@@ -201,21 +211,34 @@ export function SwapCard() {
             placeholder="0.0"
             value={fromAmount}
             onChange={(e) => setFromAmount(e.target.value)}
-            className={`border-0 bg-transparent text-2xl focus-visible:ring-0 text-white placeholder-white/50 ${
+            className={`border-0 bg-transparent text-lg md:text-xl lg:text-2xl font-bold focus-visible:ring-0 text-white placeholder-white/50 ${
               hasInsufficientBalance ? "text-red-400" : ""
             }`}
           />
           <div className="flex justify-end">
-            <span className="text-sm text-white/70">
-              Balance:{" "}
+            <Button
+              variant="link"
+              className="text-sm text-white/70 p-0 h-auto hover:text-white/90"
+              onClick={() => {
+                if (fromToken.symbol === "USDC" && usdcBalance) {
+                  setFromAmount(usdcBalance.toString());
+                } else if (fromToken.symbol === "BLTM" && bltmBalance) {
+                  setFromAmount(bltmBalance.toString());
+                }
+              }}
+            >
               {fromToken.symbol === "USDC"
                 ? isLoadingUSDCBalance
                   ? "Loading..."
-                  : usdcBalance?.toFixed(2)
+                  : usdcBalance
+                  ? `Balance: ${usdcBalance.toFixed(2)}`
+                  : null
                 : isLoadingBLTMBalance
                 ? "Loading..."
-                : bltmBalance}
-            </span>
+                : bltmBalance
+                ? `Balance: ${bltmBalance}`
+                : null}
+            </Button>
           </div>
         </div>
 
@@ -236,7 +259,7 @@ export function SwapCard() {
             <Button
               variant="ghost"
               size="sm"
-              className="gap-2 text-white hover:bg-white/20"
+              className="gap-2 text-white hover:bg-white/20 text-lg font-medium"
             >
               {toToken.icon} {toToken.symbol}
             </Button>
@@ -247,7 +270,7 @@ export function SwapCard() {
             value={calculatedToAmount?.toString() ?? "0.0"}
             readOnly
             disabled
-            className="border-0 bg-transparent text-2xl focus-visible:ring-0 text-white placeholder-white/50"
+            className="border-0 bg-transparent text-lg md:text-xl lg:text-2xl font-bold focus-visible:ring-0 text-white placeholder-white/50"
           />
         </div>
 

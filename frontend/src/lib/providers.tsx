@@ -27,28 +27,24 @@ export default function Providers({
               chainId: 84532,
               networkId: 84532,
               name: "Base Sepolia",
-              iconUrls: [],
+              iconUrls: ["https://app.dynamic.xyz/assets/networks/base.svg"],
               nativeCurrency: {
                 name: "Ethereum",
                 symbol: "ETH",
                 decimals: 18,
               },
               rpcUrls: ["https://sepolia.base.org"],
-              blockExplorerUrls: ["https://sepolia.basescan.org"]
+              blockExplorerUrls: ["https://sepolia.basescan.org"],
             },
           ],
         },
       }}
     >
-
       <WagmiProvider config={config}>
         <QueryClientProvider client={queryClient}>
-          <DynamicWagmiConnector>
-            {children}
-          </DynamicWagmiConnector>
+          <DynamicWagmiConnector>{children}</DynamicWagmiConnector>
         </QueryClientProvider>
       </WagmiProvider>
-
     </DynamicContextProvider>
   );
 }

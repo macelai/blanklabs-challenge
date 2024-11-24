@@ -1,20 +1,21 @@
 "use client";
 
-import {
-  useReadContract,
-  useWriteContract,
-  useWaitForTransactionReceipt,
-  useAccount,
-  useSimulateContract,
-} from "wagmi";
 import BLTM_ABI from "@/abis/BLTM.json";
 import {
   BLTM_ADDRESS,
-  USDC_ADDRESS,
   LIQUIDITY_POOL_ADDRESS,
+  USDC_ADDRESS,
 } from "@/config/addresses";
-import { parseUnits } from "viem";
 import { useEffect, useState } from "react";
+import { parseUnits } from "viem";
+import {
+  useAccount,
+  useReadContract,
+  useSimulateContract,
+  useWaitForTransactionReceipt,
+  useWriteContract,
+} from "wagmi";
+import { useToast } from "./use-toast";
 
 export type TokenType = "BLTM" | "USDC";
 
@@ -37,6 +38,7 @@ const TOKEN_ADDRESSES: Record<TokenType, `0x${string}`> = {
 export function useTokenApproval(tokenType: TokenType, amount: string) {
   const { address: userAddress } = useAccount();
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   // Convert amount to wei
   const amountInWei = amount
@@ -44,7 +46,11 @@ export function useTokenApproval(tokenType: TokenType, amount: string) {
     : 0;
 
   // Check current allowance
-  const { data: allowance, refetch: refetchAllowance } = useReadContract({
+  const {
+    data: allowance,
+    refetch: refetchAllowance,
+    isLoading: isAllowanceLoading,
+  } = useReadContract({
     address: TOKEN_ADDRESSES[tokenType],
     abi: BLTM_ABI,
     functionName: "allowance",
@@ -67,10 +73,21 @@ export function useTokenApproval(tokenType: TokenType, amount: string) {
   } = useWriteContract();
 
   useEffect(() => {
-    if (approveStatus === "success" || approveStatus === "error") {
+    if (approveStatus === "success") {
       setIsLoading(false);
+      toast({
+        title: "Approval Initiated",
+        description: "Your token approval transaction has been submitted",
+      });
+    } else if (approveStatus === "error") {
+      setIsLoading(false);
+      toast({
+        title: "Approval Failed",
+        description: "Failed to approve tokens. Please try again.",
+        variant: "destructive",
+      });
     }
-  }, [approveStatus]);
+  }, [approveStatus, toast]);
 
   // Watch for transaction receipt
   const { isLoading: isApproving, isSuccess: isApproveSuccess } =
@@ -81,13 +98,18 @@ export function useTokenApproval(tokenType: TokenType, amount: string) {
   useEffect(() => {
     if (isApproveSuccess) {
       refetchAllowance();
+    toast({
+        title: "Approval Successful",
+        variant: "success",
+        description: "Your token approval has been confirmed",
+      });
     }
-  }, [isApproveSuccess, refetchAllowance]);
+  }, [isApproveSuccess, refetchAllowance, toast]);
 
   const allowanceNumber = allowance ? Number(allowance) : 0;
 
   // Check if the current allowance is sufficient
-  const isApproved = allowance ? allowanceNumber >= Number(amountInWei) : false;
+  const isApproved = allowanceNumber >= amountInWei;
 
   // Handle approve function
   const handleApprove = async () => {
@@ -99,13 +121,18 @@ export function useTokenApproval(tokenType: TokenType, amount: string) {
     } catch (error) {
       console.error("Error approving tokens:", error);
       setIsLoading(false);
+      toast({
+        title: "Error",
+        description: "Failed to initiate approval transaction",
+        variant: "destructive",
+      });
       throw error;
     }
   };
 
   return {
     isApproved,
-    isApproving: isApproving || isLoading,
+    isApproving: isApproving || isLoading || isAllowanceLoading,
     isApproveSuccess,
     handleApprove,
     refetchAllowance,

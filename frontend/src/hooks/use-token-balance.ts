@@ -1,9 +1,10 @@
 "use client"
 
-import { useReadContract } from "wagmi"
-import { formatUnits } from "viem"
-import { BLTM_ADDRESS, USDC_ADDRESS } from "@/config/addresses"
 import BLTM_ABI from "@/abis/BLTM.json"
+import { BLTM_ADDRESS, USDC_ADDRESS } from "@/config/addresses"
+import { useIsLoggedIn } from "@dynamic-labs/sdk-react-core"
+import { formatUnits } from "viem"
+import { useReadContract } from "wagmi"
 
 export type TokenType = "BLTM" | "USDC"
 
@@ -24,11 +25,16 @@ const TOKEN_ADDRESSES: Record<TokenType, `0x${string}`> = {
  * @returns Object containing the token balance and loading state
  */
 export function useTokenBalance(tokenType: TokenType, address?: string) {
-  const { data: balance, isLoading } = useReadContract({
+  const isLoggedIn = useIsLoggedIn();
+
+  const { data: balance, isLoading, refetch } = useReadContract({
     address: TOKEN_ADDRESSES[tokenType],
     abi: BLTM_ABI,
     functionName: "balanceOf",
     args: address ? [address] : undefined,
+    query: {
+      enabled: isLoggedIn,
+    },
   });
 
   const formattedBalance = balance !== undefined
@@ -38,7 +44,7 @@ export function useTokenBalance(tokenType: TokenType, address?: string) {
   return {
     balance: formattedBalance,
     isLoading,
-    rawBalance: balance
+    refetch,
   }
 }
 

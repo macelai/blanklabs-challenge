@@ -1,10 +1,12 @@
 "use client";
 
-import { usePublicClient } from "wagmi";
-import { LIQUIDITY_POOL_ADDRESS } from "@/config/addresses";
-import { formatUnits } from "viem";
 import LiquidityPoolABI from "@/abis/LiquidityPool.json";
-import { useEffect, useState, useCallback } from "react";
+import { LIQUIDITY_POOL_ADDRESS } from "@/config/addresses";
+import { useIsLoggedIn } from "@dynamic-labs/sdk-react-core";
+import { useCallback, useEffect, useState } from "react";
+import { formatUnits } from "viem";
+import { usePublicClient } from "wagmi";
+import { useToast } from "./use-toast";
 
 interface Transaction {
   id: string;
@@ -18,13 +20,17 @@ interface Transaction {
  * @returns Object containing transaction history and loading state
  */
 export function useEventLogs() {
+  const isLoggedIn = useIsLoggedIn();
+  const { toast } = useToast();
   const publicClient = usePublicClient();
+
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasInitiallyFetched, setHasInitiallyFetched] = useState(false);
+  const [isError, setIsError] = useState(false);
 
   const fetchEvents = useCallback(async () => {
-    if (hasInitiallyFetched) return;
+    if (hasInitiallyFetched || !isLoggedIn) return;
 
     try {
       const [swapLogs, redeemLogs] = await Promise.all([
@@ -63,11 +69,17 @@ export function useEventLogs() {
       setIsLoading(false);
       return allTransactions;
     } catch (error) {
-      console.error("Error fetching events:", error);
+      console.error("Error fetching events:", error.message);
       setIsLoading(false);
+      setIsError(true);
+      toast({
+        title: "Error",
+        description: "Failed to fetch transaction history",
+        variant: "destructive",
+      });
       return [];
     }
-  }, [publicClient, hasInitiallyFetched]);
+  }, [publicClient, hasInitiallyFetched, isLoggedIn, toast]);
 
   useEffect(() => {
     fetchEvents();
@@ -76,6 +88,7 @@ export function useEventLogs() {
   return {
     transactions,
     isLoading,
+    isError,
     fetchEvents,
   };
 }

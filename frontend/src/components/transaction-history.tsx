@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown, Search, Loader2 } from "lucide-react";
 import { useEventLogs } from "@/hooks/use-event-logs";
+import { useIsLoggedIn } from "@dynamic-labs/sdk-react-core";
 
 interface Transaction {
   id: string;
@@ -23,7 +24,8 @@ interface Transaction {
 }
 
 export function TransactionHistory() {
-  const { transactions, isLoading } = useEventLogs();
+  const isLoggedIn = useIsLoggedIn();
+  const { transactions, isLoading, isError } = useEventLogs();
 
   const [sortConfig, setSortConfig] = React.useState<{
     key: keyof Transaction;
@@ -52,6 +54,65 @@ export function TransactionHistory() {
     setSortConfig({ key, direction });
   };
 
+  const renderTransactionContent = () => {
+    if (!isLoggedIn) {
+      return (
+        <TableRow>
+          <TableCell colSpan={3} className="text-center py-8">
+            Connect wallet to see transaction history
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    if (isLoading) {
+      return (
+        <TableRow>
+          <TableCell colSpan={3} className="text-center py-8">
+            <div className="flex items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin mr-2" />
+              <span>Loading transactions...</span>
+            </div>
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    if (isError) {
+      return (
+        <TableRow>
+          <TableCell colSpan={3} className="text-center py-8 text-red-500">
+            Error loading transactions. Please try again.
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    if (filteredTransactions.length === 0) {
+      return (
+        <TableRow>
+          <TableCell colSpan={3} className="text-center py-8">
+            No transactions found
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    return filteredTransactions.map((transaction) => (
+      <TableRow key={transaction.id}>
+        <TableCell className="capitalize">
+          {transaction.action}
+        </TableCell>
+        <TableCell className="text-right">
+          {transaction.usdcAmount.toFixed(2)}
+        </TableCell>
+        <TableCell className="text-right">
+          {transaction.bltmAmount.toFixed(2)}
+        </TableCell>
+      </TableRow>
+    ));
+  };
+
   return (
     <div className="container mx-auto py-10">
       <h1 className="text-2xl font-bold mb-5">Transaction History</h1>
@@ -65,7 +126,7 @@ export function TransactionHistory() {
           />
           <Search className="w-4 h-4 text-gray-500" />
         </div>
-        <div className="rounded-md border">
+        <div className="rounded-md border bg-gradient-to-br from-gray-900 to-black text-white">
           <Table>
             <TableHeader>
               <TableRow>
@@ -96,36 +157,7 @@ export function TransactionHistory() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={3} className="text-center py-8">
-                    <div className="flex items-center justify-center">
-                      <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                      <span>Loading transactions...</span>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : filteredTransactions.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={3} className="text-center py-8">
-                    No transactions found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredTransactions.map((transaction) => (
-                  <TableRow key={transaction.id}>
-                    <TableCell className="capitalize">
-                      {transaction.action}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {transaction.usdcAmount.toFixed(2)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {transaction.bltmAmount.toFixed(2)}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
+              {renderTransactionContent()}
             </TableBody>
           </Table>
         </div>
