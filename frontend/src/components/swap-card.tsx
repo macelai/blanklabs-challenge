@@ -107,6 +107,15 @@ export function SwapCard() {
     calculateUsdcOutput,
   ]);
 
+  const hasInsufficientBalance = useMemo(() => {
+    if (!fromAmount) return false;
+    const amount = Number(fromAmount);
+    if (fromToken.symbol === "USDC") {
+      return amount > (usdcBalance ?? 0);
+    }
+    return amount > (bltmBalance ?? 0);
+  }, [fromAmount, fromToken.symbol, usdcBalance, bltmBalance]);
+
   const getButtonText = () => {
     if (!primaryWallet) {
       return (
@@ -114,6 +123,10 @@ export function SwapCard() {
           <Loader2 className="h-4 w-4 animate-spin mr-2 animate-pulse" />
         </>
       );
+    }
+
+    if (hasInsufficientBalance) {
+      return "Insufficient Balance";
     }
 
     const isApproving =
@@ -142,7 +155,7 @@ export function SwapCard() {
   };
 
   const handleButtonClick = async () => {
-    if (!primaryWallet || !fromAmount) return;
+    if (!primaryWallet || !fromAmount || hasInsufficientBalance) return;
 
     const isApproved =
       fromToken.symbol === "USDC" ? isUSDCApproved : isBLTMApproved;
@@ -186,7 +199,9 @@ export function SwapCard() {
             placeholder="0.0"
             value={fromAmount}
             onChange={(e) => setFromAmount(e.target.value)}
-            className="border-0 bg-transparent text-2xl focus-visible:ring-0 text-white placeholder-white/50"
+            className={`border-0 bg-transparent text-2xl focus-visible:ring-0 text-white placeholder-white/50 ${
+              hasInsufficientBalance ? "text-red-400" : ""
+            }`}
           />
           <div className="flex justify-end">
             <span className="text-sm text-white/70">
@@ -256,9 +271,10 @@ export function SwapCard() {
       </CardContent>
       <CardFooter>
         <Button
-          className="w-full flex items-center justify-center bg-purple-600 text-white hover:bg-purple-700"
+          className="w-full flex items-center justify-center bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50"
           size="lg"
           disabled={
+            hasInsufficientBalance ||
             (fromToken.symbol === "USDC" ? isUSDCApproving : isBLTMApproving) ||
             !primaryWallet ||
             isSwapping ||
